@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biểu Diễn & Phân Tích Đa Thức Một Biến</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Quicksand', sans-serif; background: #f8fafc; }
+        .math-text { font-family: 'Times New Roman', serif; font-style: italic; }
+        
+        /* Hiệu ứng rung lắc khi chọn sai */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-5deg); }
+            75% { transform: translateX(5px) rotate(5deg); }
+        }
+        .animate-shake { animation: shake 0.4s ease-in-out; }
+        
+        /* Hiệu ứng mượt mà cho highlight khái niệm */
+        .transition-highlight { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        /* Background pattern cho khu vực sắp xếp */
+        .blueprint-bg {
+            background-color: #eff6ff;
+            background-image: linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 flex justify-center items-start min-h-screen">
+
+    <div id="app" class="max-w-4xl w-full pb-20 mt-4">
+        
+        <header class="text-center mb-10">
+            <div class="inline-block bg-indigo-100 text-indigo-800 px-5 py-2 rounded-full text-sm font-bold mb-4 shadow-sm tracking-wider">THỬ THÁCH 2</div>
+            <h1 class="text-4xl md:text-5xl font-bold text-indigo-700 mb-4 drop-shadow-sm">Kiến Trúc Sư Đa Thức 🏛️</h1>
+            <p class="text-gray-600 text-lg">Học cách biểu diễn đa thức dạng chuẩn và khám phá các thành phần cấu tạo nên nó.</p>
+        </header>
+
+        <div class="bg-white rounded-3xl shadow-xl overflow-hidden border-2 border-indigo-50">
+            
+            <!-- Khu vực 1: Trò chơi sắp xếp -->
+            <div id="sort-game" class="p-6 md:p-10 transition-all duration-500">
+                <div class="text-center mb-8">
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Bước 1: Sắp xếp thu gọn</h2>
+                    <p class="text-gray-600">Đa thức <span class="math-text font-bold text-xl text-indigo-600">P(x)</span> đang bị xáo trộn. Hãy <strong>BẤM</strong> vào các hạng tử bên dưới theo thứ tự số mũ từ <strong>CAO xuống THẤP</strong>.</p>
+                </div>
+
+                <!-- Khu vực các hạng tử bị xáo trộn -->
+                <div id="scrambled-terms" class="flex flex-wrap gap-4 justify-center mb-10 min-h-[70px]">
+                    <!-- Render bằng JS -->
+                </div>
+
+                <!-- Khu vực bản vẽ (đa thức đã sắp xếp) -->
+                <div class="blueprint-bg border-4 border-dashed border-indigo-300 rounded-2xl p-8 min-h-[160px] flex flex-col items-center justify-center relative shadow-inner">
+                    <div class="absolute top-4 left-6 text-indigo-400 font-bold uppercase tracking-widest text-sm">Bản Vẽ P(x)</div>
+                    <div id="arranged-terms" class="flex flex-wrap gap-2 items-center text-3xl md:text-4xl math-text font-bold text-gray-800 mt-4">
+                        <span class="text-indigo-300 font-sans text-lg italic" id="empty-placeholder">Đang chờ bạn chọn hạng tử...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Khu vực 2: Bảng phân tích khái niệm (Ẩn lúc đầu) -->
+            <div id="analysis-board" class="hidden bg-indigo-50 p-6 md:p-10 border-t-4 border-indigo-200">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-indigo-800 mb-2">Bước 2: Giải Mã Cấu Trúc 🔍</h2>
+                    <p class="text-indigo-600">Tuyệt vời! Bây giờ hãy bấm vào các nút bên dưới để xem các khái niệm của đa thức.</p>
+                </div>
+                
+                <!-- Hiển thị phương trình tương tác -->
+                <div class="text-3xl md:text-5xl text-center mb-12 math-text font-bold text-gray-800 flex justify-center items-center gap-2 flex-wrap bg-white py-8 px-4 rounded-2xl shadow-md border border-gray-100">
+                    <span class="text-indigo-600 mr-2">P(x) = </span>
+                    <!-- Từng thành phần được tách ra để có thể highlight qua JS -->
+                    <span id="term-highest" class="transition-highlight"><span id="val-lead">-3</span>x<sup id="val-deg" class="transition-highlight">4</sup></span>
+                    <span class="text-gray-400">+ 7x³</span>
+                    <span class="text-gray-400">+ 5x²</span>
+                    <span class="text-gray-400">- x</span>
+                    <span id="term-const" class="px-2 transition-highlight">+ 2</span>
+                </div>
+                
+                <!-- Các nút khái niệm -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <button onclick="highlightConcept('deg')" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-4 rounded-xl transition shadow-md border-b-4 border-blue-700 active:border-b-0 active:translate-y-1">
+                        Bậc của đa thức
+                    </button>
+                    <button onclick="highlightConcept('lead')" class="bg-teal-500 hover:bg-teal-600 text-white font-bold py-4 px-4 rounded-xl transition shadow-md border-b-4 border-teal-700 active:border-b-0 active:translate-y-1">
+                        Hệ số cao nhất
+                    </button>
+                    <button onclick="highlightConcept('const')" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-4 px-4 rounded-xl transition shadow-md border-b-4 border-amber-700 active:border-b-0 active:translate-y-1">
+                        Hệ số tự do
+                    </button>
+                </div>
+                
+                <!-- Khung giải thích khái niệm (động) -->
+                <div id="concept-desc" class="min-h-[120px] bg-white p-6 rounded-2xl text-gray-500 italic border-2 border-dashed border-gray-300 shadow-sm flex items-center justify-center text-center text-lg transition-all duration-300">
+                    Chọn một nút phía trên để bắt đầu khám phá! 👆
+                </div>
+
+                <!-- Lưu ý đặc biệt (Đã cập nhật) -->
+                <div class="mt-10 p-6 bg-amber-50 border-l-8 border-amber-500 rounded-r-2xl shadow-sm flex flex-col gap-4 relative overflow-hidden">
+                    <h4 class="font-bold text-amber-800 text-xl mb-1 flex items-center gap-2">
+                        <span class="text-3xl">💡</span> Lưu Ý Quan Trọng
+                    </h4>
+                    <ul class="list-disc ml-8 text-gray-800 text-lg space-y-3">
+                        <li>Mọi số thực khác <span class="math-text font-bold text-xl bg-white px-2 py-1 rounded shadow-sm mx-1">0</span> (ví dụ: <span class="math-text text-indigo-700">2, -5, 1/2</span>) đều được coi là một đa thức có <strong class="text-amber-700 bg-amber-200 px-2 py-1 rounded">bậc bằng 0</strong>.</li>
+                        <li>Số <span class="font-bold text-xl text-red-600 math-text bg-white px-2 py-1 rounded shadow-sm mx-1">0</span> cũng được gọi là một đa thức (đa thức không). Nó là đa thức duy nhất <strong class="text-red-600 bg-red-200 px-2 py-1 rounded">KHÔNG CÓ BẬC</strong>.</li>
+                    </ul>
+                </div>
+                
+                <div class="text-center mt-12 hidden" id="finish-btn-container">
+                     <button onclick="startPractice()" class="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-10 rounded-full transition shadow-xl text-xl animate-bounce">
+                        Chinh phục Thực Hành 2 🚀
+                     </button>
+                </div>
+            </div>
+
+            <!-- Khu vực 3: Thực Hành 2 -->
+            <div id="practice-section" class="hidden bg-white p-6 md:p-10 border-t-4 border-green-500 transition-all duration-500">
+                <div class="text-center mb-8">
+                    <h2 class="text-3xl font-bold text-green-700 mb-3">Thực Hành 2: Thử Thách Nâng Cao 🎯</h2>
+                    <p class="text-gray-600 text-lg">Cho đa thức <span class="math-text font-bold text-2xl text-green-600">Q(x) = 4x⁴ - 3x³ - x² + 2x + 1 - 4x⁴ + 5x³ - 4x² + 6x - 4</span></p>
+                    
+                    <div class="mt-6 space-y-3 text-left max-w-2xl mx-auto bg-green-50 p-6 rounded-xl border border-green-200 shadow-sm">
+                        <p class="font-bold text-green-800 text-lg border-b border-green-200 pb-2">Nhiệm vụ của bạn:</p>
+                        <ol class="list-decimal ml-6 text-gray-800 space-y-2 text-lg">
+                            <li><strong class="text-indigo-600">Rút gọn</strong> đa thức Q(x) ra giấy nháp.</li>
+                            <li><strong>Điền các hệ số</strong> của đa thức sau khi rút gọn vào biểu thức bên dưới.</li>
+                            <li>Trả lời các thông số của đa thức Q(x).</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Vùng điền khuyết hệ số rút gọn -->
+                <div class="blueprint-bg border-4 border-dashed border-green-300 rounded-2xl p-6 md:p-10 flex flex-col items-center justify-center relative shadow-inner mb-10 overflow-hidden">
+                    <div class="absolute top-4 left-6 text-green-600 font-bold uppercase tracking-widest text-sm">Kết Quả Rút Gọn Q(x)</div>
+                    
+                    <div class="flex flex-wrap gap-2 md:gap-4 items-baseline justify-center text-2xl md:text-4xl math-text font-bold text-gray-800 mt-8 w-full">
+                        <span class="text-green-600">Q(x) = </span>
+                        
+                        <!-- Bậc 4 -->
+                        <div class="flex items-baseline">
+                            <input type="number" id="coef-4" placeholder="?" class="w-16 md:w-20 text-center border-b-4 border-green-500 bg-white shadow-inner outline-none focus:border-green-700 text-indigo-700 py-1 rounded-t-md">
+                            <span class="ml-1">x⁴</span>
+                        </div>
+                        
+                        <span class="text-green-600">+</span>
+
+                        <!-- Bậc 3 -->
+                        <div class="flex items-baseline">
+                            <input type="number" id="coef-3" placeholder="?" class="w-16 md:w-20 text-center border-b-4 border-green-500 bg-white shadow-inner outline-none focus:border-green-700 text-indigo-700 py-1 rounded-t-md">
+                            <span class="ml-1">x³</span>
+                        </div>
+                        
+                        <span class="text-green-600">+</span>
+                        
+                        <!-- Bậc 2 -->
+                        <div class="flex items-baseline">
+                            <input type="number" id="coef-2" placeholder="?" class="w-16 md:w-20 text-center border-b-4 border-green-500 bg-white shadow-inner outline-none focus:border-green-700 text-indigo-700 py-1 rounded-t-md">
+                            <span class="ml-1">x²</span>
+                        </div>
+                        
+                        <span class="text-green-600">+</span>
+                        
+                        <!-- Bậc 1 -->
+                        <div class="flex items-baseline">
+                            <input type="number" id="coef-1" placeholder="?" class="w-16 md:w-20 text-center border-b-4 border-green-500 bg-white shadow-inner outline-none focus:border-green-700 text-indigo-700 py-1 rounded-t-md">
+                            <span class="ml-1">x</span>
+                        </div>
+                        
+                        <span class="text-green-600">+</span>
+                        
+                        <!-- Bậc 0 (Tự do) -->
+                        <div class="flex items-baseline">
+                            <input type="number" id="coef-0" placeholder="?" class="w-16 md:w-20 text-center border-b-4 border-green-500 bg-white shadow-inner outline-none focus:border-green-700 text-indigo-700 py-1 rounded-t-md">
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-6 italic">* Lưu ý: Điền hệ số kèm theo dấu âm (-) nếu có. Nếu hạng tử bị triệt tiêu, hãy điền số 0.</p>
+                </div>
+
+                <!-- Form Trả lời thông số -->
+                <div id="prac-quiz" class="transition-opacity duration-700">
+                    <div class="text-center mb-6">
+                        <p class="text-sm font-bold text-gray-500 uppercase tracking-wider bg-indigo-50 inline-block px-4 py-1 rounded-full border border-indigo-200">Điền thông số của Q(x)</p>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div class="bg-blue-50 p-5 rounded-xl border-2 border-blue-200 text-center shadow-sm">
+                            <label class="block text-blue-800 font-bold mb-3 text-lg">Bậc của Q(x)</label>
+                            <input type="number" id="ans-deg" placeholder="?" class="w-20 text-center text-2xl font-bold p-2 rounded-lg border-2 border-blue-300 focus:border-blue-500 outline-none transition-colors">
+                        </div>
+                        <div class="bg-teal-50 p-5 rounded-xl border-2 border-teal-200 text-center shadow-sm">
+                            <label class="block text-teal-800 font-bold mb-3 text-lg">Hệ số cao nhất</label>
+                            <input type="number" id="ans-lead" placeholder="?" class="w-20 text-center text-2xl font-bold p-2 rounded-lg border-2 border-teal-300 focus:border-teal-500 outline-none transition-colors">
+                        </div>
+                        <div class="bg-amber-50 p-5 rounded-xl border-2 border-amber-200 text-center shadow-sm">
+                            <label class="block text-amber-800 font-bold mb-3 text-lg">Hệ số tự do</label>
+                            <input type="number" id="ans-const" placeholder="?" class="w-20 text-center text-2xl font-bold p-2 rounded-lg border-2 border-amber-300 focus:border-amber-500 outline-none transition-colors">
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <button onclick="checkPracticeAnswers()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-12 rounded-full transition shadow-lg text-xl hover:scale-105">
+                            Nộp bài & Hoàn thành 🏆
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BÍ KÍP GHI VỞ -->
+                <div id="secret-notes" class="hidden mt-12 max-w-4xl mx-auto transform transition-all duration-1000 translate-y-10 opacity-0">
+                    <div class="bg-gradient-to-br from-indigo-900 via-indigo-800 to-purple-900 rounded-3xl shadow-2xl overflow-hidden relative border-4 border-indigo-300/30">
+                        <!-- Decorative backgrounds -->
+                        <div class="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+                        <div class="absolute bottom-0 left-0 -mb-10 -ml-10 w-56 h-56 bg-purple-500 opacity-20 rounded-full blur-3xl pointer-events-none"></div>
+                        
+                        <div class="p-8 md:p-12 relative z-10">
+                            <div class="text-center mb-10">
+                                <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-[0_0_20px_rgba(255,255,255,0.3)] mb-4 transform -rotate-6 hover:rotate-0 transition duration-300">
+                                    <span class="text-5xl drop-shadow-md">📓</span>
+                                </div>
+                                <h3 class="text-3xl md:text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-100 uppercase tracking-widest drop-shadow-sm" style="font-family: 'Times New Roman', serif;">Bí Kíp Ghi Vở</h3>
+                                <p class="text-indigo-200 mt-2 text-lg italic">Tổng hợp kiến thức trọng tâm cần nhớ</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Sắp xếp -->
+                                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl hover:bg-white/20 transition duration-300 shadow-lg group">
+                                    <div class="flex items-center gap-4 mb-3">
+                                        <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white text-2xl shadow-inner group-hover:scale-110 transition duration-300">🔄</div>
+                                        <h4 class="text-xl font-bold text-blue-100">1. Sắp xếp đa thức</h4>
+                                    </div>
+                                    <p class="text-indigo-50 text-lg leading-relaxed">
+                                        Cần <strong class="text-yellow-300">thu gọn đa thức trước</strong>, sau đó xếp các hạng tử theo luỹ thừa <strong class="text-white">giảm dần</strong> (hoặc tăng dần) của biến.
+                                    </p>
+                                </div>
+
+                                <!-- Bậc -->
+                                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl hover:bg-white/20 transition duration-300 shadow-lg group">
+                                    <div class="flex items-center gap-4 mb-3">
+                                        <div class="w-12 h-12 rounded-full bg-pink-500 flex items-center justify-center text-white text-2xl shadow-inner group-hover:scale-110 transition duration-300">📈</div>
+                                        <h4 class="text-xl font-bold text-pink-100">2. Bậc của đa thức</h4>
+                                    </div>
+                                    <p class="text-indigo-50 text-lg leading-relaxed">
+                                        Là <strong class="text-yellow-300">số mũ cao nhất</strong> của biến trong đa thức sau khi đã thu gọn.
+                                    </p>
+                                </div>
+
+                                <!-- Hệ số cao nhất -->
+                                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl hover:bg-white/20 transition duration-300 shadow-lg group">
+                                    <div class="flex items-center gap-4 mb-3">
+                                        <div class="w-12 h-12 rounded-full bg-teal-500 flex items-center justify-center text-white text-2xl shadow-inner group-hover:scale-110 transition duration-300">👑</div>
+                                        <h4 class="text-xl font-bold text-teal-100">3. Hệ số cao nhất</h4>
+                                    </div>
+                                    <p class="text-indigo-50 text-lg leading-relaxed">
+                                        Là hệ số của hạng tử có <strong class="text-yellow-300">bậc cao nhất</strong>. (Lưu ý: Không nhất thiết phải là số lớn nhất).
+                                    </p>
+                                </div>
+
+                                <!-- Hệ số tự do -->
+                                <div class="bg-white/10 backdrop-blur-md border border-white/20 p-6 rounded-2xl hover:bg-white/20 transition duration-300 shadow-lg group">
+                                    <div class="flex items-center gap-4 mb-3">
+                                        <div class="w-12 h-12 rounded-full bg-orange-500 flex items-center justify-center text-white text-2xl shadow-inner group-hover:scale-110 transition duration-300">🎯</div>
+                                        <h4 class="text-xl font-bold text-orange-100">4. Hệ số tự do</h4>
+                                    </div>
+                                    <p class="text-indigo-50 text-lg leading-relaxed">
+                                        Là hệ số của hạng tử <strong class="text-yellow-300">không chứa biến</strong> (tương ứng với hạng tử có bậc 0).
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Chú ý quan trọng -->
+                            <div class="mt-8 bg-gradient-to-r from-amber-400 to-orange-500 p-1.5 rounded-2xl shadow-xl transform rotate-1 hover:rotate-0 transition duration-300">
+                                <div class="bg-[#fffdf5] rounded-xl p-6 h-full border border-amber-100">
+                                    <div class="flex flex-col md:flex-row items-center gap-4 md:gap-6">
+                                        <div class="flex flex-col items-center justify-center min-w-[120px]">
+                                            <span class="text-4xl animate-bounce mb-1">⚠️</span>
+                                            <h4 class="text-xl font-extrabold text-amber-700 uppercase tracking-wide text-center">Chú ý<br>Đặc Biệt</h4>
+                                        </div>
+                                        <div class="h-16 w-px bg-amber-200 hidden md:block"></div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 w-full">
+                                            <div class="bg-white p-4 rounded-xl shadow-sm border-b-4 border-amber-400 flex items-center">
+                                                <p class="text-[17px] text-gray-700 leading-snug">Mọi <strong>số thực khác 0</strong> (VD: 5, -2, ½) là đa thức <strong class="text-amber-600">bậc 0</strong>.</p>
+                                            </div>
+                                            <div class="bg-white p-4 rounded-xl shadow-sm border-b-4 border-red-500 flex items-center">
+                                                <p class="text-[17px] text-gray-700 leading-snug">Số <strong class="text-red-600 text-xl">0</strong> là đa thức không, nó <strong class="text-red-600">KHÔNG CÓ BẬC</strong>.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Màn hình chúc mừng (Đã bị ẩn thay bằng Bí kíp, giữ lại div trống hoặc có thể bỏ qua) -->
+    <div id="celebration" class="fixed inset-0 bg-white/95 z-50 flex flex-col items-center justify-center hidden opacity-0 transition-opacity duration-700">
+        <div class="text-8xl mb-6">🎉🎓✨</div>
+        <h2 class="text-4xl md:text-5xl font-bold text-green-600 mb-4 text-center px-4">Xuất sắc!</h2>
+        <p class="text-xl text-gray-600 mb-8 text-center max-w-lg px-4">Bạn đã trở thành một "Kiến Trúc Sư Đa Thức" thực thụ. Bạn đã nắm vững cách biểu diễn và các thành phần của đa thức 1 biến.</p>
+        <button onclick="location.reload()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-transform hover:scale-105">
+            Làm lại thử thách 🔄
+        </button>
+    </div>
+
+    <script>
+        // Data cấu hình cho trò chơi
+        // P(x) = -3x^4 + 7x^3 + 5x^2 - x + 2
+        const pTerms = [
+            { id: 't1', display: '-3x⁴', exp: 4, isFirst: true },
+            { id: 't2', display: '+ 7x³', exp: 3 },
+            { id: 't3', display: '+ 5x²', exp: 2 },
+            { id: 't4', display: '- x', exp: 1 },
+            { id: 't5', display: '+ 2', exp: 0 }
+        ];
+        
+        let remainingTerms = [];
+        let conceptsViewed = { deg: false, lead: false, const: false };
+
+        // Khởi tạo trò chơi
+        function initGame() {
+            remainingTerms = [...pTerms];
+            const scArea = document.getElementById('scrambled-terms');
+            scArea.innerHTML = '';
+            
+            // Xáo trộn mảng
+            const shuffled = [...remainingTerms].sort(() => Math.random() - 0.5);
+            
+            shuffled.forEach(term => {
+                const btn = document.createElement('button');
+                // Bỏ dấu cộng ở đầu nếu nó đứng đầu lúc đang lộn xộn để trông tự nhiên hơn
+                let displayStr = term.display;
+                if(displayStr.startsWith('+ ')) displayStr = displayStr.substring(2);
+                
+                btn.className = "bg-white border-2 border-indigo-200 text-indigo-900 text-2xl md:text-3xl font-bold math-text px-6 py-4 rounded-2xl shadow-sm hover:bg-indigo-50 hover:border-indigo-400 hover:scale-110 transition-all focus:outline-none";
+                btn.innerText = displayStr;
+                btn.onclick = () => handleTermClick(term, btn);
+                scArea.appendChild(btn);
+            });
+        }
+
+        // Xử lý logic khi bấm vào hạng tử
+        function handleTermClick(term, btnElement) {
+            const currentMaxExp = Math.max(...remainingTerms.map(t => t.exp));
+            
+            if (term.exp === currentMaxExp) {
+                // ĐÚNG: Di chuyển hạng tử xuống bảng xếp
+                document.getElementById('empty-placeholder').style.display = 'none';
+                
+                const span = document.createElement('span');
+                span.className = "px-1 animate-pulse text-indigo-900";
+                
+                // Nếu là hạng tử đầu tiên xếp vào, bỏ dấu '+' đi (ví dụ thay vì +7x^3 thì chỉ hiện 7x^3 nếu nó là lớn nhất, ở đây -3x^4 có dấu trừ nên để nguyên)
+                if (term.isFirst) {
+                    span.innerText = term.display; 
+                } else {
+                    span.innerText = term.display;
+                }
+                
+                document.getElementById('arranged-terms').appendChild(span);
+                
+                setTimeout(() => span.classList.remove('animate-pulse'), 800);
+
+                // Hiệu ứng thu nhỏ và biến mất nút ở trên
+                btnElement.style.transform = 'scale(0)';
+                btnElement.style.opacity = '0';
+                setTimeout(() => btnElement.remove(), 300);
+
+                // Loại khỏi mảng chờ
+                remainingTerms = remainingTerms.filter(t => t.id !== term.id);
+
+                // Nếu đã xếp xong hết
+                if (remainingTerms.length === 0) {
+                    setTimeout(() => {
+                        document.getElementById('sort-game').classList.add('opacity-40', 'pointer-events-none');
+                        showAnalysisBoard();
+                    }, 800);
+                    showConfetti(30);
+                }
+            } else {
+                // SAI: Báo lỗi rung lắc
+                btnElement.classList.add('animate-shake', 'border-red-500', 'bg-red-50', 'text-red-700');
+                showErrorMessage("Sai rồi! Hãy chọn hạng tử có <strong>SỐ MŨ LỚN NHẤT</strong> trong các số còn lại. ❌");
+                setTimeout(() => {
+                    btnElement.classList.remove('animate-shake', 'border-red-500', 'bg-red-50', 'text-red-700');
+                }, 500);
+            }
+        }
+
+        function showAnalysisBoard() {
+            const board = document.getElementById('analysis-board');
+            board.classList.remove('hidden');
+            setTimeout(() => {
+                board.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        // Xử lý highlight khái niệm
+        function highlightConcept(type) {
+            // Đánh dấu đã xem
+            conceptsViewed[type] = true;
+            
+            // Check xem đã bấm đủ 3 nút chưa để hiện nút Hoàn thành
+            if(conceptsViewed.deg && conceptsViewed.lead && conceptsViewed.const) {
+                document.getElementById('finish-btn-container').classList.remove('hidden');
+            }
+
+            // Reset tất cả highlight
+            document.getElementById('val-deg').className = "transition-highlight";
+            document.getElementById('val-lead').className = "transition-highlight";
+            document.getElementById('term-const').className = "px-2 transition-highlight";
+            
+            // Lấy các phần tử cần update màu sắc
+            const desc = document.getElementById('concept-desc');
+            const equationSpans = document.querySelectorAll('#term-highest ~ span:not(#term-const)'); // Những thẻ span mờ đi
+            
+            // Đưa các thẻ xám lại bình thường trước khi áp dụng hiệu ứng mới
+            equationSpans.forEach(s => s.classList.add('text-gray-400'));
+            
+            if (type === 'deg') {
+                document.getElementById('val-deg').className = "bg-blue-200 text-blue-900 px-2 rounded-lg shadow-lg scale-150 inline-block z-10 relative font-bold transition-highlight border-2 border-blue-400 -translate-y-2";
+                
+                desc.innerHTML = `
+                    <div>
+                        <strong class='text-blue-700 text-2xl block mb-3'>Bậc của đa thức = 4</strong> 
+                        <span class="text-gray-700">Bậc của đa thức một biến là <strong>số mũ cao nhất</strong> của biến trong đa thức đã thu gọn. Trong <span class="math-text">P(x)</span>, số mũ cao nhất là 4.</span>
+                    </div>`;
+                desc.className = "min-h-[120px] bg-blue-50 p-6 rounded-2xl border-2 border-blue-200 shadow-md flex items-center justify-center text-center text-lg transition-all duration-300 transform scale-105";
+
+            } else if (type === 'lead') {
+                document.getElementById('val-lead').className = "bg-teal-200 text-teal-900 px-2 rounded-lg shadow-lg scale-125 inline-block z-10 relative font-bold transition-highlight border-2 border-teal-400";
+                
+                desc.innerHTML = `
+                    <div>
+                        <strong class='text-teal-700 text-2xl block mb-3'>Hệ số cao nhất = -3</strong> 
+                        <span class="text-gray-700">Là hệ số của hạng tử có bậc cao nhất. Đừng quên mang theo cả <strong>dấu âm (-)</strong> phía trước số 3 nhé!</span>
+                    </div>`;
+                desc.className = "min-h-[120px] bg-teal-50 p-6 rounded-2xl border-2 border-teal-200 shadow-md flex items-center justify-center text-center text-lg transition-all duration-300 transform scale-105";
+
+            } else if (type === 'const') {
+                document.getElementById('term-const').className = "bg-amber-200 text-amber-900 px-3 py-1 rounded-lg shadow-lg scale-125 inline-block z-10 relative font-bold transition-highlight border-2 border-amber-400";
+                
+                desc.innerHTML = `
+                    <div>
+                        <strong class='text-amber-700 text-2xl block mb-3'>Hệ số tự do = 2</strong> 
+                        <span class="text-gray-700">Là hệ số của hạng tử <strong>không chứa biến</strong> (hay chính là hạng tử có bậc bằng 0). Ở đây là số 2.</span>
+                    </div>`;
+                desc.className = "min-h-[120px] bg-amber-50 p-6 rounded-2xl border-2 border-amber-200 shadow-md flex items-center justify-center text-center text-lg transition-all duration-300 transform scale-105";
+            }
+        }
+
+        // --- CÁC HÀM CHO THỰC HÀNH 2 ---
+        function startPractice() {
+            const pracSection = document.getElementById('practice-section');
+            pracSection.classList.remove('hidden');
+            document.getElementById('finish-btn-container').classList.add('hidden');
+            
+            setTimeout(() => {
+                pracSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 100);
+        }
+
+        function checkPracticeAnswers() {
+            // Hệ số đa thức rút gọn
+            const c4 = parseInt(document.getElementById('coef-4').value);
+            const c3 = parseInt(document.getElementById('coef-3').value);
+            const c2 = parseInt(document.getElementById('coef-2').value);
+            const c1 = parseInt(document.getElementById('coef-1').value);
+            const c0 = parseInt(document.getElementById('coef-0').value);
+            
+            // Các thông số
+            const deg = parseInt(document.getElementById('ans-deg').value);
+            const lead = parseInt(document.getElementById('ans-lead').value);
+            const constant = parseInt(document.getElementById('ans-const').value);
+
+            let isCorrect = true;
+            let errMsg = "<ul class='text-left list-disc ml-6 mt-2 space-y-1'>";
+
+            if (isNaN(c4) || isNaN(c3) || isNaN(c2) || isNaN(c1) || isNaN(c0) || isNaN(deg) || isNaN(lead) || isNaN(constant)) {
+                showErrorMessage("Vui lòng điền đầy đủ tất cả các ô trống! ⚠️");
+                return;
+            }
+
+            // Đáp án Q(x) rút gọn là: 0x⁴ + 2x³ - 5x² + 8x - 3
+            if (c4 !== 0 || c3 !== 2 || c2 !== -5 || c1 !== 8 || c0 !== -3) { 
+                isCorrect = false; 
+                errMsg += "<li>Kết quả rút gọn đa thức chưa đúng. Hãy kiểm tra lại các hệ số (lưu ý dấu âm, và hạng tử bị triệt tiêu thì hệ số bằng bao nhiêu?).</li>"; 
+            }
+            if (deg !== 3) { isCorrect = false; errMsg += "<li>Bậc của Q(x) chưa đúng. (Sau khi rút gọn, biến có số mũ cao nhất là bao nhiêu?)</li>"; }
+            if (lead !== 2) { isCorrect = false; errMsg += "<li>Hệ số cao nhất chưa đúng. Nhớ lại định nghĩa: Nó là hệ số của hạng tử bậc cao nhất, không phải là số có giá trị lớn nhất!</li>"; }
+            if (constant !== -3) { isCorrect = false; errMsg += "<li>Hệ số tự do chưa đúng.</li>"; }
+
+            errMsg += "</ul>";
+
+            if (isCorrect) {
+                finishLesson();
+            } else {
+                showErrorMessage("<div class='font-bold'>Chưa chính xác:</div>" + errMsg);
+            }
+        }
+
+        function finishLesson() {
+            // Hiển thị Bí Kíp thay vì màn hình chúc mừng
+            const notes = document.getElementById('secret-notes');
+            notes.classList.remove('hidden');
+            
+            // Đổi trạng thái nút Nộp bài
+            const submitBtn = document.querySelector('#prac-quiz button');
+            if(submitBtn) {
+                submitBtn.innerHTML = "Đã hoàn thành xuất sắc! 🎉";
+                submitBtn.classList.replace('bg-indigo-600', 'bg-green-600');
+                submitBtn.classList.replace('hover:bg-indigo-700', 'hover:bg-green-700');
+                submitBtn.onclick = null;
+                submitBtn.style.cursor = 'default';
+                submitBtn.classList.remove('hover:scale-105');
+            }
+
+            setTimeout(() => {
+                notes.classList.remove('opacity-0', 'translate-y-10');
+                notes.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 50);
+            
+            // Bắn pháo hoa liên tục
+            let shots = 0;
+            const interval = setInterval(() => {
+                showConfetti(40);
+                shots++;
+                if(shots > 5) clearInterval(interval);
+            }, 400);
+        }
+
+        // --- TIỆN ÍCH ---
+        function showErrorMessage(htmlText) {
+            // Xóa message cũ nếu có
+            const oldMsg = document.getElementById('error-toast');
+            if (oldMsg) oldMsg.remove();
+
+            const message = document.createElement('div');
+            message.id = 'error-toast';
+            message.innerHTML = htmlText;
+            message.className = "fixed top-10 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-8 py-4 rounded-2xl shadow-2xl transition-all duration-300 z-50 text-center w-11/12 max-w-md flex items-center justify-center gap-3 text-lg";
+            
+            // Thêm animation trượt xuống
+            message.animate([
+                { top: '-50px', opacity: 0 },
+                { top: '40px', opacity: 1 }
+            ], { duration: 300, fill: 'forwards', easing: 'ease-out' });
+
+            document.body.appendChild(message);
+            
+            setTimeout(() => {
+                message.animate([
+                    { top: '40px', opacity: 1 },
+                    { top: '-50px', opacity: 0 }
+                ], { duration: 300, fill: 'forwards', easing: 'ease-in' }).onfinish = () => message.remove();
+            }, 3000);
+        }
+
+        function showConfetti(count = 30) {
+            const colors = ['#4f46e5', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
+            for(let i=0; i<count; i++) {
+                const conf = document.createElement('div');
+                conf.className = "fixed pointer-events-none z-[60]";
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = '-20px';
+                
+                // Random hình dạng (vuông hoặc tròn)
+                const size = Math.random() * 12 + 6;
+                conf.style.width = size + 'px';
+                conf.style.height = size + 'px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.borderRadius = Math.random() > 0.5 ? "50%" : "3px";
+                
+                document.body.appendChild(conf);
+                
+                const duration = 1500 + Math.random() * 2000;
+                const anim = conf.animate([
+                    { transform: 'translate3d(0,0,0) rotate(0deg)', opacity: 1 },
+                    { transform: `translate3d(${Math.random()*200 - 100}px, 100vh, 0) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                ], { 
+                    duration: duration, 
+                    easing: 'cubic-bezier(.37,0,.63,1)' 
+                });
+                anim.onfinish = () => conf.remove();
+            }
+        }
+
+        // Khởi động khi load trang
+        window.onload = initGame;
+    </script>
+</body>
+</html>
