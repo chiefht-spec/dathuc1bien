@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khám Phá Đa Thức Một Biến</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/framer-motion/10.16.4/framer-motion.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Quicksand', sans-serif; background: #f0f7ff; }
+        .card { transition: all 0.3s ease; cursor: grab; }
+        .card:active { cursor: grabbing; scale: 1.05; }
+        .drop-zone { min-height: 200px; transition: background 0.3s; }
+        .notebook { 
+            background: #fff;
+            background-image: radial-gradient(#d1d1d1 1px, transparent 1px);
+            background-size: 20px 20px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.1);
+            border-left: 10px solid #3b82f6;
+        }
+        .math-text { font-family: 'Times New Roman', serif; font-style: italic; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div id="app" class="max-w-5xl mx-auto">
+        
+        <!-- PHASE 1: Phân loại số lượng biến -->
+        <div id="phase-1">
+            <header class="text-center mb-8">
+                <div class="inline-block bg-blue-100 text-blue-800 px-4 py-1 rounded-full text-sm font-bold mb-3 shadow-sm">THỬ THÁCH 1</div>
+                <h1 class="text-4xl font-bold text-blue-700 mb-2">Nhà Phân Loại Tài Ba 🧩</h1>
+                <p class="text-gray-600 italic">Kéo các thẻ biểu thức vào đúng nhóm dựa trên số lượng biến!</p>
+            </header>
+
+            <div id="game-section-1" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Items to Drag -->
+                <div class="bg-white p-4 rounded-2xl shadow-md">
+                    <h2 class="font-bold text-center mb-4 text-gray-700 border-b pb-2">Kho Biểu Thức</h2>
+                    <div id="item-pool-1" class="flex flex-wrap gap-3 justify-center">
+                        <!-- Cards injected here -->
+                    </div>
+                </div>
+
+                <!-- Drop Zone 1 -->
+                <div id="zone-single" class="drop-zone bg-blue-50 border-4 border-dashed border-blue-300 rounded-3xl p-4 flex flex-col items-center">
+                    <div class="text-3xl mb-2">👤</div>
+                    <h3 class="font-bold text-blue-800 text-center uppercase text-sm mb-4">Chỉ chứa 1 loại biến (x hoặc y...)</h3>
+                    <div class="w-full space-y-2 flex flex-wrap gap-2 justify-center" id="single-variable-list"></div>
+                </div>
+
+                <!-- Drop Zone 2 -->
+                <div id="zone-multi" class="drop-zone bg-purple-50 border-4 border-dashed border-purple-300 rounded-3xl p-4 flex flex-col items-center">
+                    <div class="text-3xl mb-2">👥</div>
+                    <h3 class="font-bold text-purple-800 text-center uppercase text-sm mb-4">Chứa nhiều loại biến khác nhau</h3>
+                    <div class="w-full space-y-2 flex flex-wrap gap-2 justify-center" id="multi-variable-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notebook Section (Hiển thị ngay sau Phase 1) -->
+        <div id="notebook-section" class="mt-12 hidden opacity-0 transform translate-y-10 transition-all duration-700">
+            <div class="notebook p-8 rounded-r-2xl relative overflow-hidden">
+                <div class="absolute top-4 right-4 text-5xl opacity-10">📖</div>
+                <h2 class="text-2xl font-bold text-blue-600 border-b-2 border-blue-100 pb-2 mb-6">📔 Sổ Tay Kiến Thức Chân Trời</h2>
+                
+                <div class="space-y-6">
+                    <section>
+                        <h3 class="text-xl font-semibold text-orange-600 flex items-center">
+                            <span class="mr-2">🔹</span> Đơn thức một biến
+                        </h3>
+                        <p class="text-gray-700 ml-6 mt-2">
+                            Là biểu thức đại số chỉ gồm <span class="font-bold">một số</span>, hoặc <span class="font-bold">một biến</span>, hoặc một <span class="font-bold">tích</span> giữa các số và biến đó.
+                            <br>
+                            <span class="bg-orange-50 px-2 py-1 rounded italic">Ví dụ: 3, x, -2x, 5x², ...</span>
+                        </p>
+                    </section>
+
+                    <section>
+                        <h3 class="text-xl font-semibold text-blue-600 flex items-center">
+                            <span class="mr-2">🔹</span> Đa thức một biến
+                        </h3>
+                        <p class="text-gray-700 ml-6 mt-2">
+                            Là <span class="font-bold text-blue-700 underline">Tổng</span> của những đơn thức của cùng một biến.
+                            <br>
+                            <span class="bg-blue-50 px-2 py-1 rounded italic">Ví dụ: A(x) = 2x² + 3x - 5</span>
+                        </p>
+                        <div class="ml-6 mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-500 text-sm text-gray-800 rounded-r">
+                            <strong>⚠️ Chú ý quan trọng:</strong>
+                            <ul class="list-disc ml-5 mt-2 space-y-1">
+                                <li>Mỗi đơn thức một biến cũng được xem là một đa thức một biến.</li>
+                                <li>Các biểu thức có chứa <strong>biến ở dưới mẫu</strong> (VD: <span class="math-text">4/x</span>) hoặc <strong>biến nằm trong dấu căn</strong> (VD: <span class="math-text">√x</span>) thì <strong>KHÔNG</strong> phải là đa thức.</li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+                
+                <div id="notebook-actions" class="mt-8 text-center">
+                    <p class="text-orange-600 font-bold mb-4">Đọc kỹ sổ tay trước khi bước vào Thử thách 2 nhé!</p>
+                    <button onclick="startPhase2()" class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl transition-all animate-bounce">
+                        Tiến vào Thử Thách 2 🚀
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PHASE 2: Nhận diện Đa thức (ẩn ban đầu) -->
+        <div id="phase-2" class="hidden mt-12">
+            <header class="text-center mb-8">
+                <div class="inline-block bg-green-100 text-green-800 px-4 py-1 rounded-full text-sm font-bold mb-3 shadow-sm">THỬ THÁCH 2</div>
+                <h1 class="text-4xl font-bold text-green-700 mb-2">Truy Tìm Đa Thức 🕵️‍♂️</h1>
+                <p class="text-gray-600 italic">Cẩn thận bẫy nhé! Dựa vào sổ tay kiến thức để phân loại.</p>
+            </header>
+
+            <div id="game-section-2" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Items to Drag -->
+                <div class="bg-white p-4 rounded-2xl shadow-md">
+                    <h2 class="font-bold text-center mb-4 text-gray-700 border-b pb-2">Kho Thử Thách</h2>
+                    <div id="item-pool-2" class="flex flex-wrap gap-3 justify-center">
+                        <!-- Cards injected here -->
+                    </div>
+                </div>
+
+                <!-- Drop Zone: Là đa thức -->
+                <div id="zone-poly" class="drop-zone bg-green-50 border-4 border-dashed border-green-300 rounded-3xl p-4 flex flex-col items-center">
+                    <div class="text-3xl mb-2">✅</div>
+                    <h3 class="font-bold text-green-800 text-center uppercase text-sm mb-4">ĐÚNG là Đa thức một biến</h3>
+                    <div class="w-full space-y-2 flex flex-wrap gap-2 justify-center" id="poly-list"></div>
+                </div>
+
+                <!-- Drop Zone: KHÔNG phải đa thức -->
+                <div id="zone-not-poly" class="drop-zone bg-red-50 border-4 border-dashed border-red-300 rounded-3xl p-4 flex flex-col items-center">
+                    <div class="text-3xl mb-2">❌</div>
+                    <h3 class="font-bold text-red-800 text-center uppercase text-sm mb-4">KHÔNG phải Đa thức 1 biến</h3>
+                    <div class="w-full space-y-2 flex flex-wrap gap-2 justify-center" id="not-poly-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Phần hoàn thành bài học (ẩn ban đầu) -->
+        <div id="final-section" class="hidden mt-12 text-center pb-12">
+            <h2 class="text-3xl font-bold text-green-600 mb-6">🎉 Chúc mừng bạn đã vượt qua mọi thử thách! 🎉</h2>
+            <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-full transition shadow-lg">
+                Làm lại từ đầu 🔄
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Data Phase 1: Phân loại 1 biến vs nhiều biến
+        const expressions1 = [
+            { id: 1, val: "2x", type: "single" },
+            { id: 2, val: "-5x²", type: "single" },
+            { id: 3, val: "3x + y", type: "multi" },
+            { id: 4, val: "x² - 2x + 5", type: "single" },
+            { id: 5, val: "ab - 1", type: "multi" },
+            { id: 6, val: "y³ + 2y - 1", type: "single" },
+            { id: 7, val: "x - z", type: "multi" },
+            { id: 8, val: "7", type: "single" },
+            { id: 9, val: "x", type: "single" },
+            { id: 10, val: "x²y", type: "multi" }
+        ];
+
+        // Data Phase 2: Nhận diện Đa thức 1 biến vs KHÔNG phải đa thức
+        const expressions2 = [
+            { id: 11, val: "3x² - x", type: "poly" },
+            { id: 12, val: "4/x + 2", type: "not_poly" }, // Biến ở mẫu
+            { id: 13, val: "√x - 5", type: "not_poly" }, // Biến trong căn
+            { id: 14, val: "x³ + xy", type: "not_poly" }, // Chứa 2 biến (không phải đa thức 1 biến)
+            { id: 15, val: "-15", type: "poly" }, // Đa thức bậc 0
+            { id: 16, val: "y⁴ - 2y + 1", type: "poly" }
+        ];
+
+        let completedCount1 = 0;
+        let completedCount2 = 0;
+        const notebook = document.getElementById('notebook-section');
+
+        // Hàm tạo thẻ kéo thả
+        function createCard(expr, isPhase1 = true) {
+            const card = document.createElement('div');
+            card.className = "card bg-white border-2 border-gray-200 px-4 py-2 rounded-xl shadow-sm text-lg math-text font-bold text-gray-800";
+            card.draggable = true;
+            card.innerText = expr.val;
+            card.dataset.id = expr.id;
+            card.dataset.type = expr.type;
+            
+            card.addEventListener('dragstart', (e) => {
+                e.dataTransfer.setData('text/plain', expr.id);
+                e.dataTransfer.setData('phase', isPhase1 ? '1' : '2');
+                card.classList.add('opacity-50');
+            });
+
+            card.addEventListener('dragend', () => card.classList.remove('opacity-50'));
+            return card;
+        }
+
+        // --- PHASE 1 LOGIC ---
+        function initPhase1() {
+            const pool1 = document.getElementById('item-pool-1');
+            expressions1.sort(() => Math.random() - 0.5).forEach(expr => {
+                pool1.appendChild(createCard(expr, true));
+            });
+        }
+
+        const zones1 = ['zone-single', 'zone-multi'];
+        zones1.forEach(zoneId => {
+            const zone = document.getElementById(zoneId);
+            zone.addEventListener('dragover', (e) => e.preventDefault());
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const phase = e.dataTransfer.getData('phase');
+                if (phase !== '1') return;
+
+                const id = e.dataTransfer.getData('text/plain');
+                const itemData = expressions1.find(ex => ex.id == id);
+                
+                const isCorrect = (zoneId === 'zone-single' && itemData.type === 'single') || 
+                                  (zoneId === 'zone-multi' && itemData.type === 'multi');
+
+                if (isCorrect) {
+                    const card = document.querySelector(`[data-id="${id}"]`);
+                    const targetList = zoneId === 'zone-single' ? 'single-variable-list' : 'multi-variable-list';
+                    document.getElementById(targetList).appendChild(card);
+                    card.draggable = false;
+                    card.classList.replace('border-gray-200', zoneId === 'zone-single' ? 'border-blue-400' : 'border-purple-400');
+                    card.classList.add('scale-90', 'cursor-default');
+                    
+                    completedCount1++;
+                    if (completedCount1 === expressions1.length) {
+                        notebook.classList.remove('hidden');
+                        setTimeout(() => {
+                            notebook.classList.remove('opacity-0', 'translate-y-10');
+                            notebook.scrollIntoView({ behavior: 'smooth' });
+                        }, 50);
+                        showSuccessEffect(20);
+                    }
+                } else {
+                    showErrorMessage("Sai nhóm rồi bạn ơi! ❌");
+                }
+            });
+        });
+
+        // --- CHUYỂN PHASE ---
+        function startPhase2() {
+            document.getElementById('phase-1').classList.add('hidden');
+            document.getElementById('notebook-actions').classList.add('hidden');
+            
+            const phase2 = document.getElementById('phase-2');
+            phase2.classList.remove('hidden');
+            
+            // Cuộn lên đầu trang nơi có sổ tay để học sinh vừa làm vừa xem lại
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            initPhase2();
+        }
+
+        // --- PHASE 2 LOGIC ---
+        function initPhase2() {
+            const pool2 = document.getElementById('item-pool-2');
+            expressions2.sort(() => Math.random() - 0.5).forEach(expr => {
+                pool2.appendChild(createCard(expr, false));
+            });
+        }
+
+        const zones2 = ['zone-poly', 'zone-not-poly'];
+        zones2.forEach(zoneId => {
+            const zone = document.getElementById(zoneId);
+            zone.addEventListener('dragover', (e) => e.preventDefault());
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const phase = e.dataTransfer.getData('phase');
+                if (phase !== '2') return;
+
+                const id = e.dataTransfer.getData('text/plain');
+                const itemData = expressions2.find(ex => ex.id == id);
+                
+                const isCorrect = (zoneId === 'zone-poly' && itemData.type === 'poly') || 
+                                  (zoneId === 'zone-not-poly' && itemData.type === 'not_poly');
+
+                if (isCorrect) {
+                    const card = document.querySelector(`[data-id="${id}"]`);
+                    const targetList = zoneId === 'zone-poly' ? 'poly-list' : 'not-poly-list';
+                    document.getElementById(targetList).appendChild(card);
+                    card.draggable = false;
+                    card.classList.replace('border-gray-200', zoneId === 'zone-poly' ? 'border-green-400' : 'border-red-400');
+                    card.classList.add('scale-90', 'cursor-default');
+                    
+                    completedCount2++;
+                    if (completedCount2 === expressions2.length) {
+                        const finalSection = document.getElementById('final-section');
+                        finalSection.classList.remove('hidden');
+                        setTimeout(() => {
+                            finalSection.scrollIntoView({ behavior: 'smooth' });
+                        }, 50);
+                        showSuccessEffect(40); // Pháo giấy nhiều hơn
+                    }
+                } else {
+                    showErrorMessage("Hãy nhớ lại định nghĩa đa thức nhé! ❌");
+                }
+            });
+        });
+
+        // --- TIỆN ÍCH ---
+        function showErrorMessage(text) {
+            const message = document.createElement('div');
+            message.innerText = text;
+            message.className = "fixed bottom-10 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-full shadow-2xl transition-opacity duration-500 z-50 font-bold";
+            document.body.appendChild(message);
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => message.remove(), 500);
+            }, 2000);
+        }
+
+        function showSuccessEffect(count = 20) {
+            const colors = ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ef4444'];
+            for(let i=0; i<count; i++) {
+                const conf = document.createElement('div');
+                conf.className = "fixed pointer-events-none z-50";
+                conf.style.left = Math.random() * 100 + 'vw';
+                conf.style.top = '-10px';
+                conf.style.width = (Math.random() * 10 + 5) + 'px';
+                conf.style.height = (Math.random() * 10 + 5) + 'px';
+                conf.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                conf.style.borderRadius = Math.random() > 0.5 ? "50%" : "2px";
+                document.body.appendChild(conf);
+                
+                const anim = conf.animate([
+                    { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                    { transform: `translateY(100vh) rotate(${Math.random() * 720}deg)`, opacity: 0 }
+                ], { duration: 2000 + Math.random() * 3000, easing: 'cubic-bezier(.37,0,.63,1)' });
+                anim.onfinish = () => conf.remove();
+            }
+        }
+
+        // Khởi chạy game
+        window.onload = initPhase1;
+    </script>
+</body>
+</html>
