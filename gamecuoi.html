@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chinh Phục Đỉnh Cao Đa Thức - Pro Version</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(15px);
+            border-radius: 2rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .option-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid #edf2f7;
+            position: relative;
+            overflow: hidden;
+        }
+        .option-btn:hover:not(:disabled) {
+            transform: scale(1.01);
+            border-color: #4f46e5;
+        }
+        .option-btn:disabled {
+            cursor: default;
+            opacity: 0.8;
+        }
+        .option-btn.correct {
+            background-color: #10b981 !important;
+            color: white !important;
+            border-color: #059669 !important;
+            opacity: 1 !important;
+        }
+        .option-btn.wrong {
+            background-color: #ef4444 !important;
+            color: white !important;
+            border-color: #dc2626 !important;
+            animation: shake 0.4s ease-in-out;
+            opacity: 1 !important;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+        .timer-low {
+            color: #ef4444;
+            animation: pulse 1s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        .explanation-box {
+            animation: slideUp 0.4s ease-out;
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container" class="w-full max-w-2xl p-4">
+        <!-- Start Screen -->
+        <div id="start-screen" class="glass-card p-10 text-center">
+            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 mb-4 uppercase">Math Master</h1>
+            <h2 class="text-2xl font-bold text-gray-700 mb-6">Chinh Phục Đa Thức Một Biến</h2>
+            
+            <div class="grid grid-cols-2 gap-4 mb-8 text-left">
+                <div class="bg-blue-50 p-4 rounded-xl">
+                    <p class="text-xs text-blue-600 font-bold uppercase tracking-wider">Số câu hỏi</p>
+                    <p class="text-gray-700 font-semibold">15 câu phân cấp</p>
+                </div>
+                <div class="bg-orange-50 p-4 rounded-xl">
+                    <p class="text-xs text-orange-600 font-bold uppercase tracking-wider">Thời gian</p>
+                    <p class="text-gray-700 font-semibold">10 phút tổng cộng</p>
+                </div>
+                <div class="bg-green-50 p-4 rounded-xl">
+                    <p class="text-xs text-green-600 font-bold uppercase tracking-wider">Thưởng tốc độ</p>
+                    <p class="text-gray-700 font-semibold">Đúng < 10 giây</p>
+                </div>
+                <div class="bg-purple-50 p-4 rounded-xl">
+                    <p class="text-xs text-purple-600 font-bold uppercase tracking-wider">Hệ thống</p>
+                    <p class="text-gray-700 font-semibold">Có lời giải chi tiết</p>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-bold py-4 px-10 rounded-2xl text-2xl shadow-2xl transition transform hover:-translate-y-1">
+                BẮT ĐẦU CHƠI
+            </button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div id="quiz-screen" class="glass-card p-8 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <div class="flex flex-col">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">Tiến trình</span>
+                    <span class="text-lg font-bold text-indigo-600" id="question-counter">01/15</span>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">Thời gian</span>
+                    <span class="text-2xl font-black text-gray-800" id="game-timer">10:00</span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">Điểm</span>
+                    <span class="text-lg font-bold text-orange-500" id="score-display">0</span>
+                </div>
+            </div>
+            
+            <div class="w-full bg-gray-100 rounded-full h-2 mb-6 overflow-hidden">
+                <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-500 h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+
+            <div id="question-area">
+                <div id="question-text" class="text-xl md:text-2xl font-bold text-gray-800 mb-6 leading-tight"></div>
+                <div id="options-container" class="grid grid-cols-1 gap-3"></div>
+            </div>
+
+            <!-- Explanation Section (Visible after answering) -->
+            <div id="explanation-box" class="explanation-box mt-6 p-5 bg-indigo-50 border-2 border-indigo-100 rounded-2xl hidden">
+                <div class="flex items-start gap-3">
+                    <div class="bg-indigo-600 text-white rounded-full p-1 mt-1 flex-shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="font-bold text-indigo-900 mb-1">Giải thích:</p>
+                        <p id="explanation-text" class="text-indigo-800 text-sm leading-relaxed italic"></p>
+                    </div>
+                </div>
+                <button onclick="nextQuestion()" class="mt-5 w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">TIẾP TỤC →</button>
+            </div>
+        </div>
+
+        <!-- Result Screen -->
+        <div id="result-screen" class="glass-card p-10 text-center hidden">
+            <div id="result-icon" class="mb-4"></div>
+            <h2 class="text-3xl font-black text-gray-800 mb-1" id="result-title">KẾT QUẢ</h2>
+            <p id="final-status" class="text-md text-gray-500 mb-8 px-4"></p>
+            
+            <div class="grid grid-cols-3 gap-3 mb-10">
+                <div class="p-3 bg-indigo-50 rounded-2xl">
+                    <p class="text-[10px] font-bold text-indigo-400 uppercase">Điểm cơ bản</p>
+                    <p id="final-score" class="text-2xl font-black text-indigo-700">0</p>
+                </div>
+                <div class="p-3 bg-orange-50 rounded-2xl">
+                    <p class="text-[10px] font-bold text-orange-400 uppercase">Thưởng tốc độ</p>
+                    <p id="final-bonus" class="text-2xl font-black text-orange-600">0</p>
+                </div>
+                <div class="p-3 bg-green-50 rounded-2xl">
+                    <p class="text-[10px] font-bold text-green-400 uppercase">Độ chính xác</p>
+                    <p id="final-accuracy" class="text-2xl font-black text-green-600">0%</p>
+                </div>
+            </div>
+
+            <button onclick="restartGame()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-12 rounded-2xl shadow-xl transition transform hover:scale-105">
+                CHƠI LẠI
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                q: "Câu 1: Biểu thức nào sau đây là đa thức một biến x?",
+                options: ["2x + 3y", "x² - 5x + 1", "1/x + 2", "x + √x"],
+                correct: 1,
+                exp: "Đa thức một biến chỉ chứa một chữ cái (biến) và các lũy thừa của biến phải là số tự nhiên. '2x + 3y' có 2 biến, '1/x' và '√x' không phải lũy thừa tự nhiên."
+            },
+            {
+                q: "Câu 2: Bậc của đa thức f(x) = 7x³ - 5x + 2 là bao nhiêu?",
+                options: ["1", "2", "3", "7"],
+                correct: 2,
+                exp: "Bậc của đa thức một biến là số mũ lớn nhất của biến trong đa thức đó. Ở đây số mũ lớn nhất là 3 (trong hạng tử 7x³)."
+            },
+            {
+                q: "Câu 3: Hệ số cao nhất của đa thức P(x) = 2x - 5x² + 1 là:",
+                options: ["2", "-5", "1", "0"],
+                correct: 1,
+                exp: "Hệ số cao nhất là hệ số của hạng tử có bậc cao nhất. Bậc cao nhất là 2 (hạng tử -5x²), vậy hệ số cao nhất là -5."
+            },
+            {
+                q: "Câu 4: Hệ số tự do của đa thức Q(x) = x⁴ - 3x² - 8 là:",
+                options: ["1", "-3", "8", "-8"],
+                correct: 3,
+                exp: "Hệ số tự do là hạng tử không chứa biến x. Trong Q(x), đó chính là số -8."
+            },
+            {
+                q: "Câu 5: Trong các số sau, số nào là nghiệm của đa thức P(x) = x - 5?",
+                options: ["x = 0", "x = -5", "x = 5", "x = 1"],
+                correct: 2,
+                exp: "Nghiệm của đa thức là giá trị làm cho đa thức bằng 0. Thay x = 5 vào P(x) ta có 5 - 5 = 0."
+            },
+            {
+                q: "Câu 6: Rút gọn đa thức: A(x) = 3x² - 5x + x² - 2x + 7",
+                options: ["4x² - 7x + 7", "2x² - 3x + 7", "4x² + 7x + 7", "4x⁴ - 7x + 7"],
+                correct: 0,
+                exp: "Nhóm các hạng tử đồng dạng: (3x² + x²) + (-5x - 2x) + 7 = 4x² - 7x + 7."
+            },
+            {
+                q: "Câu 7: Sắp xếp đa thức B(x) = 2x - 3x³ + x² + 5 theo số mũ giảm dần của biến:",
+                options: ["5 + 2x + x² - 3x³", "-3x³ + x² + 2x + 5", "x² + 2x - 3x³ + 5", "-3x³ + 2x + x² + 5"],
+                correct: 1,
+                exp: "Sắp xếp theo lũy thừa giảm dần: mũ 3 → mũ 2 → mũ 1 → hệ số tự do. Kết quả là -3x³ + x² + 2x + 5."
+            },
+            {
+                q: "Câu 8: Giá trị của đa thức f(x) = x³ - 2x tại x = -1 là:",
+                options: ["-3", "1", "-1", "3"],
+                correct: 1,
+                exp: "Thay x = -1 vào biểu thức: (-1)³ - 2(-1) = -1 + 2 = 1."
+            },
+            {
+                q: "Câu 9: Bậc của đa thức sau khi thu gọn: P(x) = x⁴ - 2x² + 1 - x⁴ là:",
+                options: ["4", "2", "1", "0"],
+                correct: 1,
+                exp: "Khi thu gọn, x⁴ trừ cho x⁴ bằng 0. Đa thức còn lại là -2x² + 1, do đó bậc cao nhất là 2."
+            },
+            {
+                q: "Câu 10: Rút gọn đa thức: M(x) = 2x(x - 3) - 2x² + 5x",
+                options: ["-x", "11x", "4x² - x", "x"],
+                correct: 0,
+                exp: "Nhân phá ngoặc: 2x² - 6x - 2x² + 5x. Thu gọn (2x² - 2x²) và (-6x + 5x), ta được kết quả là -x."
+            },
+            {
+                q: "Câu 11: Tìm nghiệm của đa thức H(x) = (x - 2)(2x + 6)",
+                options: ["x = 2", "x = -3", "x = 2 hoặc x = -3", "x = 2 hoặc x = 3"],
+                correct: 2,
+                exp: "Để tích bằng 0, một trong hai nhân tử phải bằng 0. x - 2 = 0 cho x = 2; 2x + 6 = 0 cho x = -3."
+            },
+            {
+                q: "Câu 12: Đa thức nào dưới đây KHÔNG có nghiệm thực?",
+                options: ["x² - 4", "x + 10", "x² + 1", "x³ + 1"],
+                correct: 2,
+                exp: "x² luôn ≥ 0 với mọi x, nên x² + 1 luôn ≥ 1. Do đó biểu thức này không bao giờ bằng 0."
+            },
+            {
+                q: "Câu 13: Cho đa thức P(x) = ax + b. Biết P(0) = 3 và P(1) = 5. Tìm a và b:",
+                options: ["a = 2, b = 3", "a = 3, b = 2", "a = 5, b = 3", "a = 2, b = 5"],
+                correct: 0,
+                exp: "Thay x = 0: a.0 + b = 3 => b = 3. Thay x = 1: a.1 + 3 = 5 => a = 2."
+            },
+            {
+                q: "Câu 14: Thu gọn và tìm bậc của đa thức: Q(x) = x²(x + 1) - x³ + 5x",
+                options: ["Bậc 3", "Bậc 2", "Bậc 1", "Bậc 0"],
+                correct: 1,
+                exp: "Q(x) = x³ + x² - x³ + 5x = x² + 5x. Sau khi triệt tiêu x³, số mũ lớn nhất là 2."
+            },
+            {
+                q: "Câu 15: Cho đa thức f(x) thỏa mãn f(x) + x.f(-x) = x + 1. Tính f(1):",
+                options: ["0", "1", "2", "0.5"],
+                correct: 1,
+                exp: "Tại x=1: f(1)+f(-1)=2. Tại x=-1: f(-1)-f(1)=0 => f(-1)=f(1). Thay lại: f(1)+f(1)=2 => 2f(1)=2 => f(1)=1."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let speedBonus = 0;
+        let canAnswer = true;
+        let gameTime = 600; // 10 mins
+        let timerInterval;
+        let questionStartTime;
+
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const resultScreen = document.getElementById('result-screen');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const questionCounter = document.getElementById('question-counter');
+        const scoreDisplay = document.getElementById('score-display');
+        const progressBar = document.getElementById('progress-bar');
+        const explanationBox = document.getElementById('explanation-box');
+        const explanationText = document.getElementById('explanation-text');
+        const gameTimerDisplay = document.getElementById('game-timer');
+
+        function startGame() {
+            startScreen.classList.add('hidden');
+            quizScreen.classList.remove('hidden');
+            resultScreen.classList.add('hidden');
+            currentQuestion = 0;
+            score = 0;
+            speedBonus = 0;
+            gameTime = 600;
+            updateScore();
+            showQuestion();
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                gameTime--;
+                let mins = Math.floor(gameTime / 60);
+                let secs = gameTime % 60;
+                gameTimerDisplay.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                
+                if (gameTime <= 60) gameTimerDisplay.classList.add('timer-low');
+                if (gameTime <= 0) endGame();
+            }, 1000);
+        }
+
+        function showQuestion() {
+            canAnswer = true;
+            explanationBox.classList.add('hidden');
+            
+            const q = questions[currentQuestion];
+            questionCounter.innerText = `${(currentQuestion + 1).toString().padStart(2, '0')}/15`;
+            questionText.innerText = q.q;
+            
+            progressBar.style.width = `${(currentQuestion / questions.length) * 100}%`;
+
+            optionsContainer.innerHTML = '';
+            q.options.forEach((option, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn w-full p-4 text-left rounded-2xl font-bold bg-white text-gray-700 shadow-sm border-2 border-gray-100';
+                btn.innerText = option;
+                btn.onclick = () => checkAnswer(index, btn);
+                optionsContainer.appendChild(btn);
+            });
+            questionStartTime = Date.now();
+        }
+
+        function checkAnswer(selectedIndex, btn) {
+            if (!canAnswer) return;
+            canAnswer = false;
+
+            const timeTaken = (Date.now() - questionStartTime) / 1000;
+            const correctIndex = questions[currentQuestion].correct;
+            const buttons = optionsContainer.getElementsByTagName('button');
+
+            // Disable all buttons and highlight correct/wrong
+            for (let b of buttons) {
+                b.disabled = true;
+            }
+
+            if (selectedIndex === correctIndex) {
+                let bonus = 0;
+                if (timeTaken < 10) {
+                    bonus = Math.round(10 - timeTaken);
+                    speedBonus += bonus;
+                }
+                score += 10;
+                btn.classList.add('correct');
+            } else {
+                btn.classList.add('wrong');
+                buttons[correctIndex].classList.add('correct');
+            }
+
+            updateScore();
+            
+            // Show Explanation alongside the question and options
+            explanationText.innerText = questions[currentQuestion].exp;
+            explanationBox.classList.remove('hidden');
+            
+            // Auto scroll to explanation for small screens
+            setTimeout(() => {
+                explanationBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }, 100);
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                showQuestion();
+            } else {
+                endGame();
+            }
+        }
+
+        function updateScore() {
+            scoreDisplay.innerText = score + speedBonus;
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            quizScreen.classList.add('hidden');
+            resultScreen.classList.remove('hidden');
+            
+            const accuracy = Math.round((score / (questions.length * 10)) * 100);
+            
+            document.getElementById('final-score').innerText = score;
+            document.getElementById('final-bonus').innerText = speedBonus;
+            document.getElementById('final-accuracy').innerText = `${accuracy}%`;
+
+            let title = "CỐ GẮNG HƠN NÉ!";
+            let icon = "💪";
+            let status = "Đa thức một biến cần sự cẩn thận, hãy luyện tập thêm nhé!";
+
+            if (accuracy >= 90) {
+                title = "HUYỀN THOẠI MATH";
+                icon = "👑";
+                status = "Bạn thực sự là một thiên tài về Đa thức! Độ chính xác gần như tuyệt đối.";
+            } else if (accuracy >= 70) {
+                title = "BẬC THẦY ĐA THỨC";
+                icon = "🌟";
+                status = "Kiến thức của bạn rất vững chắc. Tuyệt vời!";
+            } else if (accuracy >= 50) {
+                title = "CHIẾN BINH MATH";
+                icon = "⚔️";
+                status = "Bạn đã nắm được căn bản, hãy chú ý hơn ở các câu tính toán phức tạp.";
+            }
+
+            document.getElementById('result-title').innerText = title;
+            document.getElementById('result-icon').innerHTML = `<span class="text-7xl">${icon}</span>`;
+            document.getElementById('final-status').innerText = status;
+        }
+
+        function restartGame() {
+            startGame();
+        }
+    </script>
+</body>
+</html>
